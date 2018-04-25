@@ -20,8 +20,14 @@ except ImportError:
 try:
     import pianohat
 except ImportError:
-    print("ERROR: Could not find pianohat library. Will work in 'keyboard' mode.")
+    print("ERROR: Could not find pianohat library. Will work only in 'keyboard' mode.")
     pianohat = None
+
+try:
+    import midi
+except ImportError:
+    print("ERROR: Could not find midi library. Will not load midi sequencers mode.")
+    midi = None
     
 _STARTUP_DELAY = 0.05
 _OCTAVE_WIDTH = 43
@@ -51,7 +57,7 @@ def startup_lights(callback=None):
         if i-3 >= 0:
             pianohat.set_led(i-3, False)
         j = 13+(i%3)
-        pianohat.set_led(j,led.toggle[j])
+        pianohat.set_led(j,led.toggle(j))
         time.sleep(_STARTUP_DELAY)
         if callback and callable(callback):
             callback()
@@ -128,7 +134,7 @@ class PiPianoUI():
     def __init__(self):
         pygame.init()
         pygame.font.init()
-        font = pygame.font.SysFont('monospace', 16)
+        font = pygame.font.SysFont('monospace', 14)
         screen = pygame.display.set_mode((300, 150))
 
         (key_graphic, kgrect) = load_img('hat_keys.png')
@@ -217,6 +223,7 @@ class PiPianoUI():
                 self.screen.blit(self.octbar, (octmask[0], octmask[1]), None, pygame.BLEND_ADD)
             else:
                 self.screen.blit(self.octbar, (octmask[0], octmask[1]), None, pygame.BLEND_SUB)
+        pygame.display.update()
 
     def handle_octave_up(self, channel, pressed):
         """pianohat.on_octave_up callback
@@ -519,8 +526,8 @@ class Synth8Bit(Instrument):
         self.ATTACK_MS=25
         self.RELEASE_MS=500
         
-        self.stereo = True # need to ask pygame if it is stereo
-        self.volume = {'sine':1.0, 'saw':0.15, 'square':0.5}
+        self.stereo = True # need to ask pygame if it is stereo device (not just what we set)
+        self.volume = {'sine':.15, 'saw':0.15, 'square':1.0}
         self.wavetypes = ['sine','saw','square']
         self.notes = {'sine':[],'saw':[],'square':[]}
         
@@ -608,7 +615,7 @@ class Synth8Bit(Instrument):
         pygame.mixer.pre_init(self.SAMPLERATE, -self.BITRATE, 1, 1024)
         pygame.mixer.init(channels=1)
         #pygame.mixer.set_num_channels(32)
-        self.toggle('square') # by default enable square.
+        self.toggle('sine') # by default enable sine.
         return "C2=sine,v=square,^saw"
     
     def deselect(self):
@@ -644,6 +651,74 @@ class Synth8Bit(Instrument):
         for t in self.wavetypes:
             self.notes[t][channel].fadeout(self.RELEASE_MS)
 
+
+
+
+class Midi(Instrument):
+    def __init__(self, client, name="", octaves=10, initial_octave=5,
+                 port=0, patch=1, banks=16, velocity=100):
+        self.client = client
+        self.port = port
+        self.patch = patch
+        self.banks = banks
+        self.name = "MIDI:"+name
+        self.octaves = octaves
+        self.initial_octave = initial_octave
+        self.velocity = velocity
+        
+        self.seq = None
+        
+    def select_patch(self, patch):
+        if patch < 0 or patch >= self.banks:
+            return
+        self.patch = patch
+        self.seq.event_write(midi.ProgramChangeEvent(tick=0, channel=0, data=[patch]), False, False, True)
+    
+    def note_on(self, channel, octave):
+        note = (octave * 12)  + channel
+        self.seq.event_write(midi.NoteOnEvent(velocity=self.velocity, pitch=note, tick=0), False, False, True)
+        return "on {}".format(note)
+    
+    def note_off(self, channel, octave):
+        note = (octave * 12)  + channel
+        self.seq.event_write(midi.NoteOffEvent(velocity=100, pitch=note, tick=0), False, False, True)
+        return "off {}".format(note)
+    
+    def select(self):
+        self.seq = midi.sequencer.SequencerWrite()
+        self.seq.subscribe_port(self.client, self.port)
+        self.seq.start_sequencer()
+        self.select_patch(self.patch)
+        
+    def deselect(self):
+        seq = self.seq
+        self.seq.stop_sequencer()
+        self.seq = None
+        del seq
+
+_MIDI_IGNORE = [
+    '__sequencer__',
+]
+_MIDI_SUPPORTED = [
+    'yoshimi',
+    'SunVox',
+    'CH345'
+]
+def load_midi_sequencers(phat, load_unknown=True):
+    """Iterate over the available midi hardware, excluding known
+    incompatable sequencers, and loadking known good ones.
+    """
+    if not midi:
+        return
+    hw = midi.sequencer.SequencerHardware()
+    for name in hw._clients:
+        if name in _MIDI_IGNORE:
+            continue
+        if name not in _MIDI_SUPPORTED:
+            if not load_unknown:
+                continue
+            print("Loading unknown MIDI Hardware: "+name)
+        phat.add_instrument(Midi(hw._clients[name].client, name))
 
 def load_wav_instruments(phat, base_folder):
     """Load each sub directory of a given ``base_folder`` as a` ``WavPlayer``
@@ -684,22 +759,28 @@ _KEYMAP = [
     pygame.locals.K_o,
     pygame.locals.K_i,
 ] + _QUIT_KEYS
-                            
+
+
+
 def main():
     """Example program to load the sample instruments and run the UI.
     
     Will work on a computer or RaspberryPi w/o a PianoHAT for testing using
-    the keyboard, but only one key can be pressed at a time in this mode.
-    A key will be pressed until another key is pressed.
+    the keyboard.
     
-    In this keyboard mode:
+    Keyboard mappings:
     
         * z-<comma> are mapped to the keys.
         * o/l are octave up and down
         * i is instrument
+        * q/<esc> quit
+    """
+    print """Keyboard also works:
     
-    q and <esc> can always be used to quit.
-    
+    * z-<comma> are mapped to the keys.
+    * o/l are octave up and down
+    * i is instrument
+    * q/<esc> quit
     """
     # NOTE: Some of this logic should be moved into PiPianoUI
     #       Specifically the main loop.
@@ -708,38 +789,37 @@ def main():
     p = PiPianoUI()
     p.add_instrument(Synth8Bit())
     load_wav_instruments(p, os.path.join(os.path.dirname(__file__), 'sounds'))
-    p.message("Loaded {} insturments. q/<esc> to quit.".format(len(p.instruments)))
+    load_midi_sequencers(p)
+    p.message("{} insturments. q/<esc> to quit.".format(len(p.instruments)))
     quit = False
-    i = 0
-    last = []
     while not quit:
-        for event in pygame.event.get():
-            if event.type == pygame.locals.QUIT:
+        event = pygame.event.wait()
+        if event.type == pygame.locals.QUIT:
+            quit = True
+        elif event.type not in [pygame.locals.KEYDOWN, pygame.locals.KEYUP]:
+            continue
+        if event.key in _QUIT_KEYS:
+            quit = True
+        else:
+            ## Keyboard controls
+            try:
+                channel = _KEYMAP.index(event.key)
+            except ValueError:
+                channel = -1
+            if channel > 15:
                 quit = True
-            elif event.type not in [pygame.locals.KEYDOWN, pygame.locals.KEYUP]:
-                continue
-            if event.key in _QUIT_KEYS:
-                quit = True
-            elif not pianohat:
-                ## No PianoHAT found, will use keyboard to test.
-                try:
-                    channel = _KEYMAP.index(event.key)
-                except ValueError:
-                    channel = -1
-                if channel > 15:
-                    quit = True
-                elif channel < 13:
-                    p.handle_note(channel, event.type == pygame.locals.KEYDOWN)
-                elif channel == 13:
-                    p.handle_octave_down(channel, event.type == pygame.locals.KEYDOWN)
-                elif channel == 14:
-                    p.handle_octave_up(channel, event.type == pygame.locals.KEYDOWN)
-                elif channel == 15:
-                    p.handle_instrument(channel, event.type == pygame.locals.KEYDOWN)
+            elif channel < 13:
+                p.handle_note(channel, event.type == pygame.locals.KEYDOWN)
+            elif channel == 13:
+                p.handle_octave_down(channel, event.type == pygame.locals.KEYDOWN)
+            elif channel == 14:
+                p.handle_octave_up(channel, event.type == pygame.locals.KEYDOWN)
+            elif channel == 15:
+                p.handle_instrument(channel, event.type == pygame.locals.KEYDOWN)
         pygame.display.update()
     pygame.quit()
     raise SystemExit(0)
 
+
 if __name__ == "__main__":
     main()
-    #signal.pause()
