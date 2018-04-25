@@ -699,6 +699,8 @@ class Midi(Instrument):
 
 _MIDI_IGNORE = [
     '__sequencer__',
+    'System',
+    'Midi Through'
 ]
 _MIDI_SUPPORTED = [
     'yoshimi',
