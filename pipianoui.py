@@ -25,6 +25,7 @@ except ImportError:
 
 try:
     import midi
+    import midi.sequencer
 except ImportError:
     print("ERROR: Could not find midi library. Will not load midi sequencers mode.")
     midi = None
