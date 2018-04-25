@@ -612,6 +612,8 @@ class Synth8Bit(Instrument):
     def select(self):
         if pianohat:
             pianohat.auto_leds(False)
+            for i in xrange(16):
+                pianohat.set_led(i, False)
         self.enabled = FlipFlopState()
         pygame.mixer.pre_init(self.SAMPLERATE, -self.BITRATE, 1, 1024)
         pygame.mixer.init(channels=1)
