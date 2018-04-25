@@ -137,8 +137,8 @@ class PiPianoUI():
         pygame.font.init()
         font = pygame.font.SysFont('monospace', 14)
         screen = pygame.display.set_mode((300, 150))
-
-        (key_graphic, kgrect) = load_img('hat_keys.png')
+        fdir = os.path.dirname(os.path.abspath(__file__))
+        (key_graphic, kgrect) = load_img(os.path.join(fdir,'hat_keys.png'))
         (width, height) = (kgrect.width, kgrect.height)
         width_white_key = (width - _OCTAVE_WIDTH) / 8
         
