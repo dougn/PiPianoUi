@@ -15,7 +15,7 @@ You can code up your own instrument implementations and add them to the queue of
 
 You can use the computer keyboard in addition to the Piano-HAT. This allows for testing and development on other platforms or without requiring the Piano-HAT hardware.
 
-![PianoHat](docs/img/assembled1.jpg)
+![PianoHat](doc/img/assembled1.jpg)
 
 Documentation includes a complete parts list, assembly instructions, software install steps, and problems encountered.
 
