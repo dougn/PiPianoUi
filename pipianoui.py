@@ -1,3 +1,16 @@
+"""
+Python module and script program providing an interactive graphical interface to the Raspberry Pi Piano-HAT.
+
+There are two primary classes, Instrument, and PiPianoUi. You inherit from
+Instrument and implement specific methods for notes being played.
+Then you register the instrument with an instance of PiPianoUi.
+
+This handles most of the interactions with the `Piano-HAT API <http://docs.pimoroni.com/pianohat/>` for you.
+
+The main() function is an example driver for building a full application for PiPianoUi.
+This is only an example, and can be built upon at the client level.
+"""
+
 import os
 import re
 import time
@@ -780,13 +793,13 @@ def main():
         * i is instrument
         * q/<esc> quit
     """
-    print """Keyboard also works:
+    print("""Keyboard also works:
     
     * z-<comma> are mapped to the keys.
     * o/l are octave up and down
     * i is instrument
     * q/<esc> quit
-    """
+    """)
     # NOTE: Some of this logic should be moved into PiPianoUI
     #       Specifically the main loop.
     #       But that makes some customizations to keyboard/mouse control
