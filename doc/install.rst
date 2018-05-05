@@ -55,6 +55,10 @@ The kit comes with a USB based sequencer. See instructions below
 
 All examples can be quit by using Ctrl-C
 
+.. raw:: pdf
+
+   PageBreak
+   
 Configuring for Midi Output
 ---------------------------
 
@@ -65,8 +69,8 @@ Configuring for Midi Output
     pi@raspberrypi:~ $ cd python-midi/
     pi@raspberrypi:~/python-midi $ sudo ./setup.py install
     pi@raspberrypi:~/python-midi $ cd ~/Pimoroni/pianohat/examples
-    
 
+   
 Configuring for a USB Midi Sequencer
 .....................................
 
@@ -113,6 +117,10 @@ Change the supported list to include the USB bridge::
     #supported = ['yoshimi','SunVox']
     supported = ['yoshimi','SunVox', 'CH345']
 
+.. raw:: pdf
+
+   PageBreak
+   
 Run the midi-puano.py example
 
 .. code-block:: console
@@ -124,7 +132,10 @@ USB sequencer to flicker. Each key-press and unpress is a single event. The LED 
 
 .. image:: img/play_midi.jpg
 
+.. raw:: pdf
 
+   PageBreak
+   
 midi-piano.py run on boot
 -------------------------
 

@@ -1,6 +1,10 @@
+.. raw:: pdf
+
+   PageBreak
+   
 .. _pipianoui:
 
-pypianoui.py
+pipianoui.py
 ============
 
 .. automodule:: pipianoui

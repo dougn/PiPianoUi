@@ -210,3 +210,41 @@ intersphinx_mapping = {'https://docs.python.org/': None}
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
+
+### BUG FIX https://github.com/rst2pdf/rst2pdf/pull/619
+import rst2pdf.pdfbuilder
+import docutils.core
+from docutils import nodes
+from rst2pdf.pdfbuilder import _
+def genindex_nodes(genindexentries):
+    indexlabel = _('Index')
+    indexunder = '='*len(indexlabel)
+    output=['DUMMY','=====','.. _genindex:\n\n',indexlabel,indexunder,'']
+
+    for key, entries in genindexentries:
+        #from pudb import set_trace; set_trace()
+        output.append('.. cssclass:: heading4\n\n%s\n\n'%key) # initial
+        for entryname, entryvalue in entries:
+            links, subitems = entryvalue[0:2]
+            if links:
+                output.append('`%s <#%s>`_'%(entryname,nodes.make_id(links[0][1])))
+                for i,link in enumerate(links[1:]):
+                    output[-1]+=(' `[%s] <#%s>`_ '%(i+1,nodes.make_id(link[1])))
+                output.append('')
+            else:
+                output.append(entryname)
+            if subitems:
+                for subentryname, subentrylinks in subitems:
+                    if subentrylinks:
+                        output.append('    `%s <%s>`_'%(subentryname,subentrylinks[0]))
+                        for i,link in enumerate(subentrylinks[1:]):
+                            output[-1]+=(' `[%s] <%s>`_ '%(i+1,link))
+                        output.append('')
+                    else:
+                        output.append(subentryname)
+                        output.append('')
+
+
+    doctree = docutils.core.publish_doctree('\n'.join(output))
+    return doctree[1]
+rst2pdf.pdfbuilder.genindex_nodes = genindex_nodes

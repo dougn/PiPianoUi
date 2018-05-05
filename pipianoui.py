@@ -334,11 +334,11 @@ class Instrument:
     
     By it's self, will just display the note pressed.
     
-    All instruments need to have the following members:
+    All instruments need to have the following members::
     
-    * name
-    * octaves
-    * initial_octave
+        name
+        octaves
+        initial_octave
     
     """
     def __init__(self, name="", octaves=10, initial_octave=5):
