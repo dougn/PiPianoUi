@@ -11,7 +11,7 @@ MarkupSafe==1.0
 numpy==1.15.3
 packaging==18.0
 pdfrw==0.4
-Pillow==5.1.0
+Pillow==6.2.0
 pygame==1.9.4
 Pygments==2.2.0
 pyparsing==2.2.2
