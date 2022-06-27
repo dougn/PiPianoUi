@@ -17,7 +17,7 @@ Pygments==2.2.0
 pyparsing==2.2.2
 python-midi==0.2.4
 pytz==2018.7
-reportlab==3.4.0
+reportlab==3.5.55
 requests==2.20.0
 rst2pdf==0.93.dev0
 six==1.11.0
